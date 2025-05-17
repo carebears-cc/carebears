@@ -2,18 +2,16 @@
 
 
 ## Structure
-### docs
+### features
 use cases and scenarios
 
-### www
+### docs
 Directory with website points to https://www.carebears.cc
 
 ### app
 Carebears Application
 
 
-## Features
-Describes in the [appdocs](appdocs)
 
 ## Todo
 
