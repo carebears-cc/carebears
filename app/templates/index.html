@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CareBear</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; line-height: 1.6; }
+        textarea { width: 80%; padding: 10px; margin-bottom: 10px; display: block; }
+        button { padding: 10px 20px; cursor: pointer; }
+        .container { max-width: 800px; margin: auto; }
+        .response-section { margin-top: 30px; padding: 20px; border: 1px solid #ddd; background-color: #f9f9f9; }
+        .response-section h2 { margin-top: 0; }
+        .prompt-display { font-style: italic; color: #555; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #ccc;}
+        .error { color: red; font-weight: bold; }
+        pre { white-space: pre-wrap; word-wrap: break-word; background-color: #eee; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Query Google Gemini Model (UI)</h1>
+
+        <form method="post" action="/">
+            <label for="prompt">Enter your prompt:</label><br>
+            <textarea id="prompt" name="prompt" rows="8" placeholder="e.g., Write a short poem about clouds...">{{ prompt }}</textarea><br>
+            <button type="submit">Get Response</button>
+        </form>
+
+        {% if response or error %}
+            <div class="response-section">
+                <h2>Result:</h2>
+                {% if prompt %}
+                     <p><strong>Your Prompt:</strong></p>
+                     <div class="prompt-display"><pre>{{ prompt }}</pre></div>
+                {% endif %}
+
+                {% if response %}
+                    <p><strong>Model Response:</strong></p>
+                    <div><pre>{{ response }}</pre></div>
+                    {% if duration_seconds is not none %}
+                        <p><em>API call took {{ duration_seconds | round(4) }} seconds. (via UI)</em></p>
+                    {% endif %}
+                {% elif error %}
+                    <div class="error">
+                        <p><strong>Error:</strong> {{ error }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
