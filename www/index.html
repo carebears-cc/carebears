@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareBears - Adding Care Back to Healthcare</title>
+  <style>
+    /* Global Styles */
+    :root {
+      --primary-color: #f8a5c2; /* Soft pink */
+      --secondary-color: #92d3f5; /* Soft blue */
+      --accent-color: #c8b6ff; /* Soft purple */
+      --warm-color: #f9c784; /* Warm yellow */
+      --text-color: #5a5a5a; /* Soft gray */
+      --light-color: #ffffff;
+      --shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background-color: #fef6f9;
+      color: var(--text-color);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    
+    /* Header Styles */
+    header {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+      padding: 1rem 0;
+      position: fixed;
+      width: 100%;
+      z-index: 1000;
+      box-shadow: var(--shadow);
+    }
+    
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo img {
+      width: 50px;
+      margin-right: 10px;
+    }
+    
+    .logo h1 {
+      color: var(--light-color);
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+    
+    .nav-links {
+      display: flex;
+      list-style: none;
+    }
+    
+    .nav-links li {
+      margin-left: 2rem;
+    }
+    
+    .nav-links a {
+      color: var(--light-color);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-links a:hover {
+      color: var(--warm-color);
+    }
+    
+    .btn {
+      background-color: var(--warm-color);
+      color: var(--text-color);
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 50px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+      box-shadow: var(--shadow);
+    }
+    
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 7px 25px rgba(0, 0, 0, 0.15);
+      background-color: #f7b955;
+    }
+    
+    .btn-primary {
+      background-color: var(--warm-color);
+    }
+    
+    .btn-secondary {
+      background-color: var(--secondary-color);
+      color: var(--text-color);
+    }
+    
+    /* Hero Section */
+    .hero {
+      padding: 10rem 0 5rem;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%23f8a5c233"/></svg>');
+      background-size: 300px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .hero-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .hero-text {
+      flex: 1;
+      padding-right: 2rem;
+    }
+    
+    .hero-text h2 {
+      font-size: 3rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      color: var(--text-color);
+      line-height: 1.2;
+    }
+    
+    .hero-text p {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+      color: var(--text-color);
+      max-width: 90%;
+    }
+    
+    .hero-text .highlight {
+      color: var(--primary-color);
+      font-weight: 700;
+    }
+    
+    .hero-image {
+      flex: 1;
+      position: relative;
+    }
+    
+    .hero-image img {
+      width: 100%;
+      max-width: 500px;
+      filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15));
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+      100% { transform: translateY(0px); }
+    }
+    
+    /* Features Section */
+    .features {
+      padding: 5rem 0 3rem;
+      background-color: var(--light-color);
+    }
+    
+    .section-title {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    
+    .section-title h3 {
+      font-size: 2.5rem;
+      color: var(--text-color);
+      margin-bottom: 1rem;
+    }
+    
+    .section-title p {
+      font-size: 1.2rem;
+      color: var(--text-color);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    
+    .feature-card {
+      background-color: var(--light-color);
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+    
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 5px;
+      background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+      z-index: -1;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    }
+    
+    .feature-icon {
+      font-size: 3rem;
+      margin-bottom: 1.5rem;
+      color: var(--primary-color);
+      display: inline-block;
+    }
+    
+    .feature-card h4 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: var(--text-color);
+    }
+    
+    .feature-card p {
+      color: var(--text-color);
+      line-height: 1.7;
+    }
+    
+    /* Testimonials */
+    .testimonials {
+      padding: 5rem 0;
+      background-color: #fef6f9;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .testimonials::before {
+      content: '';
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background-color: rgba(146, 211, 245, 0.1);
+      top: -150px;
+      right: -150px;
+      z-index: 0;
+    }
+    
+    .testimonials::after {
+      content: '';
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background-color: rgba(248, 165, 194, 0.1);
+      bottom: -100px;
+      left: -100px;
+      z-index: 0;
+    }
+    
+    .testimonial-slider {
+      position: relative;
+      margin-top: 2rem;
+      overflow: hidden;
+    }
+    
+    .testimonial-track {
+      display: flex;
+      transition: transform 0.5s ease;
+    }
+    
+    .testimonial-slide {
+      min-width: 100%;
+      padding: 0 1rem;
+    }
+    
+    .testimonial-card {
+      background-color: var(--light-color);
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow: var(--shadow);
+      position: relative;
+      z-index: 1;
+    }
+    
+    .testimonial-content {
+      font-size: 1.1rem;
+      font-style: italic;
+      margin-bottom: 1.5rem;
+      color: var(--text-color);
+      line-height: 1.8;
+    }
+    
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+    }
+    
+    .testimonial-author img {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 1rem;
+      border: 3px solid var(--primary-color);
+    }
+    
+    .author-info h5 {
+      font-size: 1.1rem;
+      color: var(--text-color);
+    }
+    
+    .author-info p {
+      font-size: 0.9rem;
+      color: var(--text-color);
+      opacity: 0.8;
+    }
+    
+    .testimonial-dots {
+      display: flex;
+      justify-content: center;
+      margin-top: 1.5rem;
+    }
+    
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: var(--primary-color);
+      opacity: 0.4;
+      margin: 0 0.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .dot.active {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+    
+    /* CTA Section */
+    .cta {
+      padding: 5rem 0;
+      background: linear-gradient(135deg, var(--accent-color) 0%, var(--primary-color) 100%);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .cta-content {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .cta h3 {
+      font-size: 2.5rem;
+      color: var(--light-color);
+      margin-bottom: 1.5rem;
+    }
+    
+    .cta p {
+      font-size: 1.2rem;
+      color: var(--light-color);
+      margin-bottom: 2rem;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .cta .btn {
+      font-size: 1.2rem;
+      padding: 1rem 2rem;
+    }
+    
+    /* Footer */
+    footer {
+      background-color: #f8f8f8;
+      padding: 3rem 0 1.5rem;
+    }
+    
+    .footer-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+    
+    .footer-column h4 {
+      font-size: 1.2rem;
+      color: var(--text-color);
+      margin-bottom: 1.5rem;
+      position: relative;
+      padding-bottom: 0.5rem;
+    }
+    
+    .footer-column h4::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 50px;
+      height: 2px;
+      background-color: var(--primary-color);
+    }
+    
+    .footer-column ul {
+      list-style: none;
+    }
+    
+    .footer-column ul li {
+      margin-bottom: 0.8rem;
+    }
+    
+    .footer-column ul li a {
+      color: var(--text-color);
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+    
+    .footer-column ul li a:hover {
+      color: var(--primary-color);
+      margin-left: 5px;
+    }
+    
+    .footer-social {
+      display: flex;
+      margin-top: 1rem;
+    }
+    
+    .footer-social a {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--light-color);
+      margin-right: 1rem;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+    
+    .footer-social a:hover {
+      transform: translateY(-5px);
+      background-color: var(--accent-color);
+    }
+    
+    .footer-bottom {
+      text-align: center;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .footer-bottom p {
+      font-size: 0.9rem;
+      color: var(--text-color);
+    }
+    
+    /* Mobile menu */
+    .menu-toggle {
+      display: none;
+      flex-direction: column;
+      cursor: pointer;
+    }
+    
+    .menu-toggle span {
+      width: 30px;
+      height: 3px;
+      background-color: var(--light-color);
+      margin: 3px 0;
+      transition: all 0.3s ease;
+    }
+    
+    /* Float animation for bear icons */
+    .bear-float {
+      animation: bearFloat 4s ease-in-out infinite;
+      display: inline-block;
+    }
+    
+    @keyframes bearFloat {
+      0%, 100% { transform: translateY(0) rotate(0); }
+      25% { transform: translateY(-5px) rotate(5deg); }
+      75% { transform: translateY(-5px) rotate(-5deg); }
+    }
+    
+    /* Responsive Styles */
+    @media screen and (max-width: 992px) {
+      .hero-content {
+        flex-direction: column;
+      }
+      
+      .hero-text {
+        text-align: center;
+        padding-right: 0;
+        margin-bottom: 2rem;
+      }
+      
+      .hero-text p {
+        max-width: 100%;
+      }
+      
+      .hero-image img {
+        max-width: 350px;
+      }
+    }
+    
+    @media screen and (max-width: 768px) {
+      .menu-toggle {
+        display: flex;
+      }
+      
+      .nav-links {
+        position: absolute;
+        top: 80px;
+        left: 0;
+        width: 100%;
+        background-color: var(--primary-color);
+        flex-direction: column;
+        align-items: center;
+        padding: 2rem 0;
+        height: 0;
+        overflow: hidden;
+        transition: all 0.5s ease;
+      }
+      
+      .nav-links.active {
+        height: auto;
+      }
+      
+      .nav-links li {
+        margin: 1.5rem 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="container">
+      <nav>
+        <div class="logo">
+          <div class="bear-float">🧸</div>
+          <h1>CareBears</h1>
+        </div>
+        <ul class="nav-links" id="navLinks">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#testimonials">Stories</a></li>
+          <li><a href="#about">About Us</a></li>
+          <li><a href="#" class="btn btn-primary">Launch App</a></li>
+        </ul>
+        <div class="menu-toggle" id="menuToggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-text">
+          <h2>Adding <span class="highlight">Care</span> Back to Healthcare</h2>
+          <p>CareBears helps patients and caregivers navigate chronic conditions with confidence, compassion, and community support. Like a warm hug when you need it most.</p>
+          <a href="#" class="btn btn-primary">Get Started</a>
+          <a href="#features" class="btn btn-secondary">Learn More</a>
+        </div>
+        <div class="hero-image">
+          <svg viewBox="0 0 400 300" width="500" height="375">
+            <!-- Bear Shape -->
+            <ellipse cx="200" cy="150" rx="120" ry="110" fill="#f9c784"/> <!-- Body -->
+            <circle cx="140" cy="100" r="40" fill="#f9c784"/> <!-- Left Ear -->
+            <circle cx="260" cy="100" r="40" fill="#f9c784"/> <!-- Right Ear -->
+            <circle cx="140" cy="100" r="25" fill="#f8a5c2"/> <!-- Inner Left Ear -->
+            <circle cx="260" cy="100" r="25" fill="#f8a5c2"/> <!-- Inner Right Ear -->
+            <circle cx="200" cy="160" r="70" fill="#fad9a6"/> <!-- Face -->
+            <ellipse cx="170" cy="140" rx="10" ry="15" fill="#5a5a5a"/> <!-- Left Eye -->
+            <ellipse cx="230" cy="140" rx="10" ry="15" fill="#5a5a5a"/> <!-- Right Eye -->
+            <circle cx="170" cy="135" r="5" fill="white"/> <!-- Left Eye Highlight -->
+            <circle cx="230" cy="135" r="5" fill="white"/> <!-- Right Eye Highlight -->
+            <ellipse cx="200" cy="170" rx="15" ry="10" fill="#5a5a5a"/> <!-- Nose -->
+            <path d="M180,190 Q200,210 220,190" stroke="#5a5a5a" stroke-width="4" fill="none"/> <!-- Smile -->
+            
+            <!-- Heart above Bear -->
+            <path d="M200,70 C215,40 250,40 250,70 C250,100 200,120 200,120 C200,120 150,100 150,70 C150,40 185,40 200,70" fill="#f8a5c2" />
+            
+            <!-- Stethoscope -->
+            <path d="M150,230 C150,230 180,200 200,230 C220,260 250,230 250,230" stroke="#92d3f5" stroke-width="8" fill="none" />
+            <circle cx="150" cy="230" r="12" fill="#92d3f5" />
+            <circle cx="250" cy="230" r="12" fill="#92d3f5" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-title">
+        <h3>How CareBears Helps</h3>
+        <p>We provide the tools, resources, and support patients and caregivers need to navigate healthcare with confidence and compassion.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">📋</div>
+          <h4>Medical Record Summaries</h4>
+          <p>We translate complex medical terminology into plain language, making it easier to understand diagnoses, treatment plans, and next steps.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🗓️</div>
+          <h4>Appointment Management</h4>
+          <p>Keep track of all appointments across multiple providers in one place, with helpful reminders and preparation instructions.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔍</div>
+          <h4>Resource Navigator</h4>
+          <p>Find local support groups, patient assistance programs, and educational resources tailored to specific conditions.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">👨‍⚕️</div>
+          <h4>Second Opinion Facilitator</h4>
+          <p>Get guidance on obtaining second opinions with prepared medical history summaries and specialist recommendations.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">👨‍👩‍👧‍👦</div>
+          <h4>Care Community Builder</h4>
+          <p>Connect with other caregivers and patients facing similar situations to share knowledge and support.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">❤️</div>
+          <h4>Emotional Support</h4>
+          <p>Access 24/7 supportive guidance during difficult moments when you need a virtual bear hug the most.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="testimonials" id="testimonials">
+    <div class="container">
+      <div class="section-title">
+        <h3>Care Stories</h3>
+        <p>Read about how CareBears has made a difference in the lives of patients and caregivers.</p>
+      </div>
+      <div class="testimonial-slider">
+        <div class="testimonial-track" id="testimonialTrack">
+          <div class="testimonial-slide">
+            <div class="testimonial-card">
+              <div class="testimonial-content">
+                "CareBears has been an absolute lifesaver during my mother's cancer treatment. It helped me organize all her appointments, understand her treatment plan, and connect with other caregivers. I don't know how I would have managed without it."
+              </div>
+              <div class="testimonial-author">
+                <div class="author-info">
+                  <h5>Sarah M.</h5>
+                  <p>Caregiver for mother with breast cancer</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="testimonial-slide">
+            <div class="testimonial-card">
+              <div class="testimonial-content">
+                "After my stroke, I felt completely overwhelmed by the healthcare system. CareBears simplified everything and made me feel like I had a personal assistant guiding me through recovery. The medical record summaries were especially helpful when visiting new specialists."
+              </div>
+              <div class="testimonial-author">
+                <div class="author-info">
+                  <h5>Robert J.</h5>
+                  <p>Stroke survivor</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="testimonial-slide">
+            <div class="testimonial-card">
+              <div class="testimonial-content">
+                "As a healthcare professional, I recommend CareBears to all my patients with chronic conditions. It bridges the gap between hospital and home, improving adherence to treatment plans and reducing readmissions. The care communities it creates are truly special."
+              </div>
+              <div class="testimonial-author">
+                <div class="author-info">
+                  <h5>Dr. Alicia T.</h5>
+                  <p>Nurse Practitioner</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-dots" id="testimonialDots">
+          <div class="dot active"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta">
+    <div class="container">
+      <div class="cta-content">
+        <h3>Ready to Add Care Back to Healthcare?</h3>
+        <p>Join thousands of patients and caregivers who are navigating health challenges with confidence and compassion.</p>
+        <a href="#" class="btn btn-primary">Launch CareBears <span class="bear-float">🧸</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-column">
+          <div class="logo">
+            <div class="bear-float">🧸</div>
+            <h1>CareBears</h1>
+          </div>
+          <p>Adding care back to healthcare, one bear hug at a time.</p>
+          <div class="footer-social">
+            <a href="#"><span>f</span></a>
+            <a href="#"><span>t</span></a>
+            <a href="#"><span>in</span></a>
+            <a href="#"><span>ig</span></a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Our Team</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Help Center</a></li>
+            <li><a href="#">Community</a></li>
+            <li><a href="#">Research</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">HIPAA Compliance</a></li>
+            <li><a href="#">Accessibility</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 CareBears. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile Menu Toggle
+    const menuToggle = document.getElementById('menuToggle');
+    const navLinks = document.getElementById('navLinks');
+    
+    menuToggle.addEventListener('click', () => {
+      navLinks.classList.toggle('active');
+    });
+    
+    // Smooth Scrolling
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        
+        if (this.getAttribute('href') !== '#') {
+          document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+          });
+          
+          // Close mobile menu if open
+          if (navLinks.classList.contains('active')) {
+            navLinks.classList.remove('active');
+          }
+        }
+      });
+    });
+    
+    // Testimonial Slider
+    const testimonialTrack = document.getElementById('testimonialTrack');
+    const dots = document.querySelectorAll('.dot');
+    let currentSlide = 0;
+    
+    function goToSlide(index) {
+      testimonialTrack.style.transform = `translateX(-${index * 100}%)`;
+      
+      // Update active dot
+      dots.forEach(dot => dot.classList.remove('active'));
+      dots[index].classList.add('active');
+      
+      currentSlide = index;
+    }
+    
+    // Add click event to dots
+    dots.forEach((dot, index) => {
+      dot.addEventListener('click', () => {
+        goToSlide(index);
+      });
+    });
+    
+    // Auto slide
+    setInterval(() => {
+      currentSlide = (currentSlide + 1) % dots.length;
+      goToSlide(currentSlide);
+    }, 5000);
+    
+    // Parallax effect for hero section
+    window.addEventListener('scroll', () => {
+      const scrollPosition = window.scrollY;
+      
+      if (scrollPosition < 800) {
+        document.querySelector('.hero').style.backgroundPositionY = `${scrollPosition * 0.5}px`;
+      }
+    });
+    
+    // Add animation to feature cards when they come into view
+    const featureCards = document.querySelectorAll('.feature-card');
+    
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = 1;
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, { threshold: 0.2 });
+    
+    featureCards.forEach(card => {
+      card.style.opacity = 0;
+      card.style.transform = 'translateY(20px)';
+      card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+      observer.observe(card);
+    });
+  </script>
+</body>
+</html>
