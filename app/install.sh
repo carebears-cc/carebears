@@ -24,6 +24,32 @@ if ! command -v python3 &> /dev/null || [[ $(python3 --version | cut -d' ' -f2) 
     fi
 fi
 
+# Install Nginx if not already installed
+if ! command -v nginx &> /dev/null; then
+    echo "Installing Nginx..."
+    if command -v apt &> /dev/null; then
+        sudo apt update
+        sudo apt install -y nginx
+    else
+        echo "Please install Nginx manually for your system."
+        exit 1
+    fi
+fi
+
+# Configure Nginx for the application
+echo "Configuring Nginx for the application..."
+sudo cp nginx_config /etc/nginx/sites-available/carebears
+sudo ln -sf /etc/nginx/sites-available/carebears /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default  # Remove default config
+sudo nginx -t  # Test configuration
+sudo systemctl restart nginx
+
+# Create data directory with correct permissions
+echo "Creating data directory..."
+mkdir -p data
+sudo chown -R $USER:$USER data
+chmod 755 data
+
 # Set up virtual environment
 echo "Setting up virtual environment..."
 python3.13 -m venv .venv
@@ -33,6 +59,33 @@ source .venv/bin/activate
 echo "Installing the app and its dependencies..."
 pip install -e .
 
-echo "Installation complete! To run the application:"
-echo "1. Activate the virtual environment: source .venv/bin/activate"
-echo "2. Run the application: uvicorn main:app --reload"
+# Create systemd service file for the application
+echo "Creating systemd service file..."
+cat > carebears.service << EOF
+[Unit]
+Description=CareBears Uvicorn Service
+After=network.target
+
+[Service]
+User=$USER
+Group=$USER
+WorkingDirectory=$(pwd)
+Environment="PATH=$(pwd)/.venv/bin"
+ExecStart=$(pwd)/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo mv carebears.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable carebears.service
+sudo systemctl start carebears.service
+
+echo "Installation complete! The application is now running at http://localhost"
+echo ""
+echo "To control the service:"
+echo "- Start: sudo systemctl start carebears"
+echo "- Stop: sudo systemctl stop carebears"
+echo "- Restart: sudo systemctl restart carebears"
+echo "- Status: sudo systemctl status carebears"
