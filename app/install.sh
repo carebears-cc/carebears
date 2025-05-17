@@ -3,44 +3,35 @@
 # Exit on error
 set -e
 
-echo "Installing dependencies for carebears app on Ubuntu 24.04..."
+echo "Installing carebears app..."
 
-# Update system
-sudo apt update
-sudo apt upgrade -y
+# Check if Python 3.13+ is available
+if ! command -v python3 &> /dev/null || [[ $(python3 --version | cut -d' ' -f2) < "3.13" ]]; then
+    echo "Python 3.13 or higher is required but not found."
+    
+    # Check if running on Ubuntu/Debian
+    if command -v apt &> /dev/null; then
+        echo "Installing Python dependencies on Ubuntu/Debian..."
+        # Install deadsnakes PPA for Ubuntu to get newer Python versions
+        sudo apt update
+        sudo apt install -y software-properties-common
+        sudo add-apt-repository -y ppa:deadsnakes/ppa
+        sudo apt update
+        sudo apt install -y python3.13 python3.13-venv python3.13-dev
+    else
+        echo "Please install Python 3.13 or higher manually for your system."
+        exit 1
+    fi
+fi
 
-# Install build dependencies
-sudo apt install -y build-essential libssl-dev zlib1g-dev \
-libbz2-dev libreadline-dev libsqlite3-dev curl \
-libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev \
-libffi-dev liblzma-dev
-
-# Install Python 3.13
-echo "Installing Python 3.13..."
-cd /tmp
-curl -O https://www.python.org/ftp/python/3.13.0/Python-3.13.0.tar.xz
-tar -xf Python-3.13.0.tar.xz
-cd Python-3.13.0
-./configure --enable-optimizations
-make -j $(nproc)
-sudo make altinstall
-
-# Verify Python installation
-python3.13 --version
-
-# Install uv
-echo "Installing uv..."
-curl -fsSL https://raw.githubusercontent.com/astral-sh/uv/main/install.sh | bash
-
-# Create and activate virtual environment
+# Set up virtual environment
 echo "Setting up virtual environment..."
-cd $HOME/carebears/app
-/usr/local/bin/python3.13 -m venv .venv
+python3.13 -m venv .venv
 source .venv/bin/activate
 
-# Install dependencies using uv
-echo "Installing dependencies with uv..."
-uv pip install -e .
+# Install the package
+echo "Installing the app and its dependencies..."
+pip install -e .
 
 echo "Installation complete! To run the application:"
 echo "1. Activate the virtual environment: source .venv/bin/activate"
