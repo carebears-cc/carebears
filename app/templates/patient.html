@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareBears - Patient Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="container">
+      <nav>
+        <div class="logo">
+          <div class="logo-icon">🧸</div>
+          <h1>CareBears</h1>
+        </div>
+        <ul class="nav-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="#patient-info">Patient Info</a></li>
+          <li><a href="#ask-carebear">Ask CareBear</a></li>
+          {% if interactions %}
+          <li><a href="#interactions">Interactions</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container" style="padding-top: 2rem;">
+    <section id="patient-info">
+      <div class="card">
+        <h2 class="card-title">Patient Information</h2>
+        <div class="patient-info">
+          <div class="patient-info-item">
+            <span class="patient-info-label">Name:</span>
+            <span>{{ patient.name }}</span>
+          </div>
+          <div class="patient-info-item">
+            <span class="patient-info-label">Date of Birth:</span>
+            <span>{{ patient.dob }}</span>
+          </div>
+          <div class="patient-info-item">
+            <span class="patient-info-label">Location:</span>
+            <span>{{ patient.location }}</span>
+          </div>
+          <div class="patient-info-item">
+            <span class="patient-info-label">Diagnosis:</span>
+            <span>{{ patient.diagnosis }}</span>
+          </div>
+          {% if patient.care_gaps %}
+          <div class="patient-info-item">
+            <span class="patient-info-label">Care Gaps:</span>
+            <span>{{ patient.care_gaps }}</span>
+          </div>
+          {% endif %}
+        </div>
+        
+        <div class="context-section">
+          <div class="context-title">Patient Context</div>
+          <pre>{{ patient.context | string }}</pre>
+        </div>
+      </div>
+    </section>
+    
+    <section id="ask-carebear">
+      <div class="card">
+        <h2 class="card-title">Ask CareBear</h2>
+        <form method="post" action="/patients/{{ patient.id }}/prompt">
+          <div class="form-group">
+            <label for="prompt_type">What would you like help with?</label>
+            <select id="prompt_type" name="prompt_type" required>
+              <option value="base" {% if prompt_type == "base" %}selected{% endif %}>General Information</option>
+              <option value="find_care_groups" {% if prompt_type == "find_care_groups" %}selected{% endif %}>Find Support Groups</option>
+              <option value="medication_reminder" {% if prompt_type == "medication_reminder" %}selected{% endif %}>Medication Reminders</option>
+              <option value="appointment_preparation" {% if prompt_type == "appointment_preparation" %}selected{% endif %}>Appointment Preparation</option>
+              <option value="symptom_check" {% if prompt_type == "symptom_check" %}selected{% endif %}>Symptom Check</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="user_input">Your Question:</label>
+            <textarea id="user_input" name="user_input" rows="4" placeholder="What would you like to ask?" required>{{ user_input or "" }}</textarea>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">Ask CareBear</button>
+        </form>
+        
+        {% if response %}
+        <div class="response-section">
+          <h3>CareBear's Response:</h3>
+          <div class="formatted-response">
+            {{ response | format_llm_response }}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+    
+    {% if interactions %}
+    <section id="interactions">
+      <div class="card">
+        <h2 class="card-title">Recent Interactions</h2>
+        {% for interaction in interactions %}
+        <div class="interaction-card">
+          <div class="interaction-header">
+            <span class="interaction-type">{{ interaction.prompt_type }}</span>
+            <span class="interaction-date">{{ interaction.created_at }}</span>
+          </div>
+          <div class="interaction-question">
+            You asked: {{ interaction.user_input }}
+          </div>
+          <div class="interaction-response">
+            {{ interaction.response | format_llm_response }}
+          </div>
+          {% if interaction.context_after and interaction.context_after != interaction.context_before %}
+          <div class="context-update">
+            <div class="context-section" style="margin-top: 1rem;">
+              <div class="context-title">Updated Context</div>
+              <pre>{{ interaction.context_after | string }}</pre>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>CareBears - Adding Care Back to Healthcare &copy; 2025</p>
+    </div>
+  </footer>
+</body>
+</html>

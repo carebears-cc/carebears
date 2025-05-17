@@ -1,0 +1,33 @@
+Patient: Jasmine Connor
+
+Demographics:
+Age: 35 y/o
+Date of birth: 10/12/1985
+Gender: Female
+Location: 94538
+
+Problem List:
+- C50.921. Breast cancer, malignant, stage IIIA, invasive ductal carcinoma, estrogen receptor positive [12/31/2021 to 12/31/2021]
+
+Encounters:
+Ambulatory visit
+2/14/2022 to 2/14/2022
+
+Progress note:
+Chief Complaint: Follow-up appointment for breast cancer diagnosis and treatment plan
+
+History of Present Illness: The patient was diagnosed with stage IIIA invasive ductal carcinoma, estrogen receptor positive. She is currently undergoing chemotherapy with docetaxel and will be taking tamoxifen daily.
+
+Social and Family History: Not relevant to this encounter
+
+Review of Systems: The patient's overall health is stable, with no significant medical or surgical history.
+
+Physical Exam: Not performed today
+
+Medication List: Docetaxel 75 mg/m2 IV every 3 weeks, tamoxifen 20 mg PO daily
+
+Assessment: The patient is currently undergoing treatment for breast cancer and will need to be monitored for side effects and lab results.
+
+Plan: The patient will return in 3 weeks for lab draws and to monitor for side effects. She will also start taking tamoxifen daily and report any side effects or concerns to the office. She will schedule follow-up appointments with her primary care physician for routine check-ups.
+
+After Visit Summary: The patient was diagnosed with stage IIIA invasive ductal carcinoma, estrogen receptor positive. She is currently undergoing chemotherapy and will be taking tamoxifen daily. She will return in 3 weeks for lab draws and to monitor for side effects. She will also start taking tamoxifen daily and report any side effects or concerns to the office.

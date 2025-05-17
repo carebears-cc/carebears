@@ -1,50 +1,160 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>CareBear</title>
-    <style>
-        body { font-family: sans-serif; margin: 20px; line-height: 1.6; }
-        textarea { width: 80%; padding: 10px; margin-bottom: 10px; display: block; }
-        button { padding: 10px 20px; cursor: pointer; }
-        .container { max-width: 800px; margin: auto; }
-        .response-section { margin-top: 30px; padding: 20px; border: 1px solid #ddd; background-color: #f9f9f9; }
-        .response-section h2 { margin-top: 0; }
-        .prompt-display { font-style: italic; color: #555; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #ccc;}
-        .error { color: red; font-weight: bold; }
-        pre { white-space: pre-wrap; word-wrap: break-word; background-color: #eee; padding: 10px; border-radius: 5px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareBears - Adding Care Back to Healthcare</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
 </head>
 <body>
+  <!-- Header -->
+  <header>
     <div class="container">
-        <h1>Query Google Gemini Model (UI)</h1>
-
-        <form method="post" action="/">
-            <label for="prompt">Enter your prompt:</label><br>
-            <textarea id="prompt" name="prompt" rows="8" placeholder="e.g., Write a short poem about clouds...">{{ prompt }}</textarea><br>
-            <button type="submit">Get Response</button>
-        </form>
-
-        {% if response or error %}
-            <div class="response-section">
-                <h2>Result:</h2>
-                {% if prompt %}
-                     <p><strong>Your Prompt:</strong></p>
-                     <div class="prompt-display"><pre>{{ prompt }}</pre></div>
-                {% endif %}
-
-                {% if response %}
-                    <p><strong>Model Response:</strong></p>
-                    <div><pre>{{ response }}</pre></div>
-                    {% if duration_seconds is not none %}
-                        <p><em>API call took {{ duration_seconds | round(4) }} seconds. (via UI)</em></p>
-                    {% endif %}
-                {% elif error %}
-                    <div class="error">
-                        <p><strong>Error:</strong> {{ error }}</p>
-                    </div>
-                {% endif %}
-            </div>
-        {% endif %}
+      <nav>
+        <div class="logo">
+          <div class="logo-icon">🧸</div>
+          <h1>CareBears</h1>
+        </div>
+        <ul class="nav-links">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#upload">Add Patient</a></li>
+          <li><a href="#patients">Patients</a></li>
+        </ul>
+      </nav>
     </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container" style="padding-top: 2rem;">
+    <section class="intro">
+      <div class="card">
+        <h2 class="card-title">Welcome to CareBears</h2>
+        <p>CareBears is an AI companion for patients with chronic conditions and their caregivers, providing crucial support during the challenging transition from hospital to home and throughout the ongoing management of complex health conditions.</p>
+        
+        <h3 style="margin-top: 1.5rem;" id="features">Key Features:</h3>
+        <ul class="feature-list">
+          <li>Post-Discharge Navigation Support</li>
+          <li>Care Coordination for Caregivers</li>
+          <li>Chronic Condition Management</li>
+          <li>Medical Record Summarization</li>
+          <li>Resource Navigator</li>
+          <li>Appointment Management</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="upload" class="patient-upload">
+      <div class="card">
+        <h2 class="card-title">Upload Patient Information</h2>
+        <p>Upload a text file containing patient information. Our AI will automatically extract relevant details.</p>
+        
+        <form id="fileUploadForm" method="post" action="/upload-patient-file" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="patientFile">Patient Text File:</label>
+            <input type="file" id="patientFile" name="file" accept=".txt" required>
+          </div>
+          <p class="note">The file should contain information about the patient, including their name, date of birth, location with ZIP code, diagnosis, and any care gaps.</p>
+          <button type="submit" class="btn btn-primary">Upload and Process</button>
+          {% if error %}
+          <div class="error">{{ error }}</div>
+          {% endif %}
+        </form>
+        
+        <hr>
+        
+        <h3 style="margin-bottom: 1rem;">Or Enter Patient Information Manually</h3>
+        <form id="patientForm" method="post" action="javascript:void(0);" onsubmit="createPatient()">
+          <div class="form-group">
+            <label for="name">Full Name:</label>
+            <input type="text" id="name" name="name" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="dob">Date of Birth:</label>
+            <input type="text" id="dob" name="dob" placeholder="MM/DD/YYYY" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="location">Location (with ZIP code):</label>
+            <input type="text" id="location" name="location" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="diagnosis">Primary Diagnosis:</label>
+            <input type="text" id="diagnosis" name="diagnosis" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="care_gaps">Care Gaps (optional):</label>
+            <textarea id="care_gaps" name="care_gaps" rows="3"></textarea>
+          </div>
+          
+          <button type="submit" class="btn btn-secondary">Create Patient</button>
+          <div id="errorMessage" class="error" style="display: none;"></div>
+        </form>
+      </div>
+    </section>
+
+    <section id="patients" class="patient-list">
+      <div class="card">
+        <h2 class="card-title">Your Patients</h2>
+        <div id="patientListContent">
+          <p>Loading patient list...</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>CareBears - Adding Care Back to Healthcare &copy; 2025</p>
+    </div>
+  </footer>
+
+  <script>
+    // Function to create a new patient
+    async function createPatient() {
+      const form = document.getElementById('patientForm');
+      const errorMessage = document.getElementById('errorMessage');
+      
+      // Create patient object from form data
+      const patientData = {
+        name: document.getElementById('name').value,
+        dob: document.getElementById('dob').value,
+        location: document.getElementById('location').value,
+        diagnosis: document.getElementById('diagnosis').value,
+        care_gaps: document.getElementById('care_gaps').value
+      };
+      
+      try {
+        // Send POST request to create patient
+        const response = await fetch('/api/patients', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(patientData)
+        });
+        
+        // Handle response
+        if (response.ok) {
+          const patient = await response.json();
+          // Redirect to the patient page
+          window.location.href = `/patients/${patient.id}`;
+        } else {
+          const error = await response.json();
+          errorMessage.textContent = `Error: ${error.detail}`;
+          errorMessage.style.display = 'block';
+        }
+      } catch (error) {
+        errorMessage.textContent = `Error: ${error.message}`;
+        errorMessage.style.display = 'block';
+      }
+    }
+    
+    // We would add more JavaScript for loading patient list, but that would require
+    // implementing a GET /api/patients endpoint which is not in our current scope
+  </script>
 </body>
 </html>

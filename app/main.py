@@ -1,210 +1,376 @@
 import os
-import time
 import logging
-from fastapi import FastAPI, HTTPException, Request, Form
+import json
+import re
+from fastapi import FastAPI, HTTPException, Request, Form, Depends, File, UploadFile
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from tempfile import NamedTemporaryFile
+from pathlib import Path
+from markupsafe import Markup
 
-# Import Google's Generative AI library
-from google import genai
+# Import local modules
+from models import (
+    PatientCreate, PatientResponse, 
+    InteractionCreate, InteractionResponse,
+    PromptRequest, PromptResponse
+)
+from database import (
+    init_db, add_patient, get_patient, 
+    get_patient_interactions, update_patient_context
+)
+from services import process_prompt, initialize_gemini, extract_patient_info_from_text
 
-# Import Logfire
+# Import Logfire for observability
 import logfire
 
 # --- Logfire Configuration ---
-# Logfire needs to be configured early.
-# It typically picks up the LOGFIRE_TOKEN from environment variables.
-# It also instruments FastAPI automatically if installed before app creation.
-# For local development, you might use the `logfire dev` command.
-LOGFIRE_TOKEN=os.environ.get("LOGFIRE_TOKEN")
-logfire.configure(token=LOGFIRE_TOKEN)
-# You can add default attributes to all logs/spans if needed:
-# logfire.set_global_attributes({"app_name": "gemini-fastapi-app"})
+LOGFIRE_TOKEN = os.environ.get("LOGFIRE_TOKEN")
+logfire.configure(
+    token=LOGFIRE_TOKEN,
+    service_name="carebears-app"
+)
 
-
-# --- Standard Library Logging (Logfire integrates with this) ---
-# Configure standard logging. Logfire will often enhance or capture these logs.
+# Configure standard logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-logger.info("Application starting up.")
-
+logger.info("CareBears application starting up.")
 
 # --- FastAPI App Initialization ---
-# Logfire auto-instruments FastAPI, so instantiate the app after logfire.configure()
 app = FastAPI(
-    title="Gemini FastAPI App with Logfire",
-    description="Simple API to query Google Gemini model with observability via Logfire.",
+    title="CareBears",
+    description="AI companion for patients with chronic conditions and their caregivers.",
     version="1.0.0"
 )
 
-# --- Templating Setup ---
-# Configure Jinja2Templates to look for templates in the "templates" directory
+# --- Helper Functions for Templating ---
+def format_llm_response(text):
+    """
+    Format LLM response by:
+    1. Extracting and formatting the 'response' field from JSON if present
+    2. Detecting and formatting JSON blocks
+    3. Converting markdown-like formatting to HTML
+    4. Hiding context tags from display
+    """
+    if not text:
+        return ""
+    
+    # First, check if the entire text is a JSON object with a 'response' field
+    try:
+        # Try to parse the entire text as JSON
+        json_obj = json.loads(text)
+        # If it's a JSON object with a 'response' key, extract and process that
+        if isinstance(json_obj, dict) and 'response' in json_obj:
+            # The 'response' field might contain markdown, so we'll process it
+            response_text = json_obj['response']
+            # Continue processing with the extracted response text
+            text = response_text
+    except json.JSONDecodeError:
+        # Not a JSON object, continue with normal processing
+        pass
+    
+    # Remove context sections as they're displayed separately
+    text = re.sub(r'<context>.*?</context>', '', text, flags=re.DOTALL)
+    
+    # Function to replace JSON blocks with formatted HTML
+    def replace_json(match):
+        try:
+            # Try to parse the JSON
+            json_str = match.group(1).strip()
+            parsed = json.loads(json_str)
+            
+            # Apply syntax highlighting with classes
+            def highlight_json(obj, indent=0):
+                result = ""
+                if isinstance(obj, dict):
+                    result += "{\n"
+                    items = list(obj.items())
+                    for i, (key, value) in enumerate(items):
+                        result += " " * ((indent + 1) * 2)
+                        result += f'<span class="key">"{key}"</span>: '
+                        result += highlight_json(value, indent + 1)
+                        if i < len(items) - 1:
+                            result += ","
+                        result += "\n"
+                    result += " " * (indent * 2) + "}"
+                elif isinstance(obj, list):
+                    result += "[\n"
+                    for i, item in enumerate(obj):
+                        result += " " * ((indent + 1) * 2)
+                        result += highlight_json(item, indent + 1)
+                        if i < len(obj) - 1:
+                            result += ","
+                        result += "\n"
+                    result += " " * (indent * 2) + "]"
+                elif isinstance(obj, str):
+                    result += f'<span class="string">"{obj}"</span>'
+                elif isinstance(obj, (int, float)):
+                    result += f'<span class="number">{obj}</span>'
+                elif isinstance(obj, bool):
+                    result += f'<span class="boolean">{str(obj).lower()}</span>'
+                elif obj is None:
+                    result += f'<span class="null">null</span>'
+                return result
+            
+            # Format with syntax highlighting
+            formatted = highlight_json(parsed)
+            
+            # Wrap in a styled div
+            return f'<div class="json-block"><pre>{formatted}</pre></div>'
+        except json.JSONDecodeError:
+            # If it's not valid JSON, return the original text
+            return match.group(0)
+    
+    # Find and format JSON-like blocks (enclosed in ```json or just {})
+    text = re.sub(r'```json\s*(.*?)\s*```', replace_json, text, flags=re.DOTALL)
+    text = re.sub(r'```\s*({.*?})\s*```', replace_json, text, flags=re.DOTALL)
+    
+    # Handle generic code blocks, removing the code fence markers
+    def replace_generic_code_block(match):
+        language = match.group(1) or ""
+        code_content = match.group(2)
+        if language and language != "json":  # JSON already handled above
+            return f'<div class="code-block {language}"><pre>{code_content}</pre></div>'
+        return code_content  # Just return the content without the fences
+        
+    # Remove triple backticks with language specifier
+    text = re.sub(r'```(\w*)\s*(.*?)\s*```', replace_generic_code_block, text, flags=re.DOTALL)
+    
+    # Also catch standalone JSON objects
+    standalone_json_pattern = r'^\s*({[\s\S]*})\s*$'
+    if re.match(standalone_json_pattern, text):
+        text = re.sub(standalone_json_pattern, replace_json, text, flags=re.DOTALL)
+    
+    # Convert markdown-style formatting
+    # Bold
+    text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
+    # Italic
+    text = re.sub(r'\*(.*?)\*', r'<em>\1</em>', text)
+    # Headers
+    text = re.sub(r'^### (.*?)$', r'<h3>\1</h3>', text, flags=re.MULTILINE)
+    text = re.sub(r'^## (.*?)$', r'<h2>\1</h2>', text, flags=re.MULTILINE)
+    text = re.sub(r'^# (.*?)$', r'<h1>\1</h1>', text, flags=re.MULTILINE)
+    
+    # Lists
+    def replace_list(match):
+        items = match.group(0).split('\n')
+        list_html = '<ul>'
+        for item in items:
+            if item.strip().startswith('- '):
+                list_item = item.strip()[2:]
+                list_html += f'<li>{list_item}</li>'
+        list_html += '</ul>'
+        return list_html
+    
+    text = re.sub(r'(^- .*?$\n?)+', replace_list, text, flags=re.MULTILINE)
+    
+    # Convert newlines to <br> for HTML display
+    text = text.replace('\n', '<br>')
+    
+    return Markup(text)
+
+# --- Templating and Static Files Setup ---
 templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# --- Pydantic Models for Request and Response ---
+# Register custom filters
+templates.env.filters["format_llm_response"] = format_llm_response
 
-# Request body validation
-class PromptRequest(BaseModel):
-    prompt: str
-    # Add other potential parameters here, e.g.:
-    # temperature: float = 0.7
-    # max_output_tokens: int = 100
-
-# Response body structure
-class GeminiResponse(BaseModel):
-    input_prompt: str
-    output_text: str
-    duration_seconds: float
-    model_name: str
-    # You could add more fields captured from the API response or Logfire data
-
-
-# --- Gemini Configuration (Global instance for simplicity) ---
-# Get Google API key from environment variable
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
-
-# Define the model name
-GEMINI_MODEL_NAME = "gemini-2.0-flash" # Or other available Gemini model
-
-# Initialize the Gemini model instance (done once on startup)
-gemini_model = None
-
-# FastAPI Startup Event to initialize the Gemini model
+# --- Startup Event to Initialize Database and Gemini ---
 @app.on_event("startup")
 async def startup_event():
-    global gemini_model
-    if not GOOGLE_API_KEY:
-        logger.error("GOOGLE_API_KEY environment variable is not set. Gemini model will not be initialized.")
-        # Log this event with Logfire as well
-        logfire.error("Gemini model initialization skipped - missing GOOGLE_API_KEY")
-        return # Exit startup if key is missing
+    init_db()
+    initialize_gemini()
+    logger.info("Database and Gemini model initialized")
 
+# --- API Routes ---
+
+# Patient routes
+@app.post("/api/patients", response_model=PatientResponse)
+@logfire.instrument("Create patient")
+async def create_patient(patient: PatientCreate):
+    """Create a new patient record"""
     try:
-        gemini_model = genai.Client(api_key=GOOGLE_API_KEY)
-        logger.info(f"Successfully initialized Gemini model: {GEMINI_MODEL_NAME}")
-        # Log success with Logfire. Logfire understands dicts and Pydantic models.
-        logfire.info("Gemini model initialized successfully", model_name=GEMINI_MODEL_NAME)
+        patient_id = add_patient(
+            name=patient.name,
+            dob=patient.dob,
+            location=patient.location,
+            diagnosis=patient.diagnosis,
+            care_gaps=patient.care_gaps
+        )
+        
+        # Get the created patient to return
+        created_patient = get_patient(patient_id)
+        if created_patient:
+            return created_patient
+        else:
+            raise HTTPException(status_code=500, detail="Failed to retrieve created patient")
     except Exception as e:
-         logger.error(f"Failed to initialize Gemini model: {e}", exc_info=True)
-         # Log the failure with Logfire
-         logfire.error("Failed to initialize Gemini model", error=str(e), model_name=GEMINI_MODEL_NAME)
+        logger.error(f"Error creating patient: {e}")
+        logfire.error("Patient creation failed", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to create patient: {str(e)}")
 
+@app.get("/api/patients/{patient_id}", response_model=PatientResponse)
+@logfire.instrument("Get patient")
+async def get_patient_info(patient_id: int):
+    """Get a patient's information"""
+    patient_data = get_patient(patient_id)
+    if patient_data:
+        return patient_data
+    raise HTTPException(status_code=404, detail=f"Patient with ID {patient_id} not found")
 
-# --- FastAPI Route to Generate Text ---
-# Use logfire.instrument to automatically create a span for this function
-# Logfire also instruments FastAPI request handling automatically
-@app.post("/generate", response_model=GeminiResponse)
-@logfire.instrument("POST /generate endpoint") # Adds a Logfire span around this handler
-async def generate_text(request: PromptRequest):
-    """
-    Receives a prompt, queries the Gemini model, and returns the response.
-    This function is instrumented by Logfire.
-    """
-    # Log the incoming prompt using Logfire - Logfire understands Pydantic models
-    # logfire.info("Received prompt request", prompt_request=request) # Option 1: log the Pydantic model
-    logfire.info("Received prompt request", prompt=request.prompt) # Option 2: log specific fields
+@app.get("/api/patients/{patient_id}/interactions")
+@logfire.instrument("Get patient interactions")
+async def get_interactions(patient_id: int, limit: int = 10):
+    """Get a patient's recent interactions"""
+    patient_data = get_patient(patient_id)
+    if not patient_data:
+        raise HTTPException(status_code=404, detail=f"Patient with ID {patient_id} not found")
+        
+    interactions = get_patient_interactions(patient_id, limit)
+    return {"interactions": interactions}
 
-
-    if gemini_model is None:
-        error_msg = "Gemini model not initialized. Please ensure GOOGLE_API_KEY is set correctly."
-        logger.error(error_msg)
-        logfire.error("API call failed: Model not initialized", detail=error_msg) # Log error with Logfire
-        raise HTTPException(status_code=500, detail=error_msg)
-
-    start_time = time.time()
-    response_text = None
-    error_message = None
-
+# Prompt processing route
+@app.post("/api/prompts", response_model=PromptResponse)
+@logfire.instrument("Process prompt")
+async def process_user_prompt(request: PromptRequest):
+    """Process a user prompt with the Gemini model and update patient context"""
     try:
-        # Use a Logfire span to time and add context to the external API call
-        with logfire.span("Calling Gemini API", model=GEMINI_MODEL_NAME, prompt_length=len(request.prompt)):
-             ai_response = gemini_model.models.generate_content(model=GEMINI_MODEL_NAME, contents=request.prompt)
-             response_text = ai_response.text
-
-        end_time = time.time()
-        duration = end_time - start_time
-
-        logger.info(f"Gemini call finished in {duration:.4f}s")
-        # Log the successful API call details with Logfire
-        logfire.info("Gemini API call successful",
-                     model_name=GEMINI_MODEL_NAME,
-                     duration_seconds=duration,
-                     response_length=len(response_text),
-                     # response_text=response_text # Be cautious logging full large responses
-                     )
-
-        # Return the structured response
-        return GeminiResponse(
-            input_prompt=request.prompt,
-            output_text=response_text,
-            duration_seconds=duration,
-            model_name=GEMINI_MODEL_NAME
+        # Process the prompt and get response with updated context
+        response_text, updated_context = process_prompt(
+            prompt_type=request.prompt_type,
+            patient_id=request.patient_id,
+            user_input=request.user_input
         )
-
+        
+        # Return the model response and updated context
+        return PromptResponse(
+            response=response_text,
+            updated_context=updated_context
+        )
     except Exception as e:
-        end_time = time.time() # Capture end time even on error
-        duration = end_time - start_time
-        error_message = str(e)
-        logger.error(f"Error during Gemini call: {e}", exc_info=True) # Log exception details in stdlib logs
+        logger.error(f"Error processing prompt: {e}")
+        logfire.error("Prompt processing failed", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to process prompt: {str(e)}")
 
-        # Log the error event with Logfire, including relevant context
-        logfire.error(
-            "Error during Gemini API call",
-            error_type=type(e).__name__,
-            error_message=error_message,
-            duration_seconds=duration,
-            model_name=GEMINI_MODEL_NAME,
-            prompt_preview=request.prompt[:100] + "..." if len(request.prompt) > 100 else request.prompt # Log preview
-        )
-        # Re-raise HTTPException to return a proper API error response
-        raise HTTPException(status_code=500, detail=f"Error generating text: {error_message}")
+# --- Web UI Routes ---
 
-# --- FastAPI Route for Web UI (GET) ---
-# Handles displaying the HTML form
 @app.get("/", response_class=HTMLResponse)
-@logfire.instrument("GET / UI endpoint") # Logfire span
-async def get_ui(request: Request):
-    """
-    Displays the HTML form for the UI.
-    """
-    # Render the template with no initial data
-    return templates.TemplateResponse("index.html", {"request": request, "prompt": "", "response": None, "error": None, "duration_seconds": None})
+@logfire.instrument("Get home page")
+async def get_home(request: Request):
+    """Display the home page"""
+    return templates.TemplateResponse("index.html", {"request": request})
 
-# --- FastAPI Route for Web UI (POST) ---
-# Handles processing the form submission and displaying result
-@app.post("/", response_class=HTMLResponse)
-@logfire.instrument("POST / UI endpoint") # Logfire span
-async def post_ui(request: Request, prompt: str = Form(...)):
+@app.post("/upload-patient-file", response_class=HTMLResponse)
+@logfire.instrument("Upload patient file")
+async def upload_patient_file(request: Request, file: UploadFile = File(...)):
     """
-    Processes the form submission from the UI, calls Gemini, and displays the result.
-    Expects form data field: 'prompt'
+    Process a text file containing patient information, extract data using LLM,
+    and create a new patient record
     """
-    logger.info(f"Received UI form submission.")
-    # Using prompt variable captured by Form(...)
-    logfire.info("Processing UI form submission", prompt=prompt)
+    try:
+        # Create a temporary file to store the uploaded content
+        with NamedTemporaryFile(delete=False) as temp_file:
+            # Read content from the uploaded file
+            content = await file.read()
+            temp_file.write(content)
+            temp_file_path = temp_file.name
+            
+        # Read the temporary file content as text
+        with open(temp_file_path, 'r', encoding='utf-8') as f:
+            file_content = f.read()
+            
+        # Delete the temporary file
+        os.unlink(temp_file_path)
+        
+        # Extract patient information using the LLM
+        patient_data = extract_patient_info_from_text(file_content)
+        
+        # Check if extraction was successful
+        if "error" in patient_data:
+            return templates.TemplateResponse(
+                "index.html", 
+                {"request": request, "error": patient_data["error"]}
+            )
+        
+        # Create the patient record
+        patient_id = add_patient(
+            name=patient_data.get("name", ""),
+            dob=patient_data.get("dob", ""),
+            location=patient_data.get("location", ""),
+            diagnosis=patient_data.get("diagnosis", ""),
+            care_gaps=patient_data.get("care_gaps", None),
+            context={"source": "file_upload", "raw_text": file_content}
+        )
+        
+        # Redirect to the patient page
+        return RedirectResponse(url=f"/patients/{patient_id}", status_code=303)
+        
+    except Exception as e:
+        logger.error(f"Error processing patient file: {e}")
+        logfire.error("Patient file processing failed", error=str(e))
+        return templates.TemplateResponse(
+            "index.html", 
+            {"request": request, "error": f"Failed to process file: {str(e)}"}
+        )
 
-    response_text, duration, error_message = await call_gemini_model(prompt)
-
-    # Render the template with the submitted prompt and the result/error
-    # The template will decide what to display based on which variables are not None
+@app.get("/patients/{patient_id}", response_class=HTMLResponse)
+@logfire.instrument("Get patient UI")
+async def get_patient_ui(request: Request, patient_id: int):
+    """Display the patient interface"""
+    patient_data = get_patient(patient_id)
+    if not patient_data:
+        return RedirectResponse(url="/")
+        
     return templates.TemplateResponse(
-        "index.html",
+        "patient.html", 
+        {"request": request, "patient": patient_data}
+    )
+
+@app.post("/patients/{patient_id}/prompt", response_class=HTMLResponse)
+@logfire.instrument("Patient prompt UI")
+async def post_patient_prompt(
+    request: Request, 
+    patient_id: int, 
+    prompt_type: str = Form(...),
+    user_input: str = Form(...)
+):
+    """Process a patient prompt from the UI"""
+    patient_data = get_patient(patient_id)
+    if not patient_data:
+        return RedirectResponse(url="/")
+    
+    # Process the prompt
+    response_text, updated_context = process_prompt(
+        prompt_type=prompt_type,
+        patient_id=patient_id,
+        user_input=user_input
+    )
+    
+    # Get the patient's updated information
+    updated_patient = get_patient(patient_id)
+    
+    # Get recent interactions
+    interactions = get_patient_interactions(patient_id, limit=5)
+    
+    return templates.TemplateResponse(
+        "patient.html", 
         {
-            "request": request,
-            "prompt": prompt,
+            "request": request, 
+            "patient": updated_patient,
+            "interactions": interactions,
             "response": response_text,
-            "error": error_message,
-            "duration_seconds": duration,
+            "prompt_type": prompt_type,
+            "user_input": user_input
         }
     )
 
-# --- Optional: Health Check Route ---
+# Health check endpoint
 @app.get("/health")
 def health_check():
-    """Simple health check endpoint."""
+    """Simple health check endpoint"""
     return {"status": "ok"}
 
-# To run this app, save it as main.py and use:
-# GOOGLE_API_KEY="YOUR_GOOGLE_API_KEY" LOGFIRE_TOKEN="YOUR_LOGFIRE_TOKEN" uvicorn main:app --reload
-# (Or set environment variables separately)
+# Run the application using:
+# GOOGLE_API_KEY="YOUR_GOOGLE_API_KEY" LOGFIRE_TOKEN="YOUR_LOGFIRE_TOKEN" uvicorn app.main:app --reload
