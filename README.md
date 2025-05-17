@@ -13,7 +13,7 @@ Carebears Application
 
 
 ## Features
-Describes in the [docs](docs)
+Describes in the [appdocs](appdocs)
 
 ## Todo
 
