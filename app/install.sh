@@ -47,7 +47,7 @@ sudo systemctl restart nginx
 # Create data directory with correct permissions
 echo "Creating data directory..."
 mkdir -p data
-sudo chown -R www-data:www-data data
+sudo chown -R carebear:carebear data
 chmod 755 data
 
 # Create systemd service file for the application
@@ -58,8 +58,8 @@ Description=CareBears Uvicorn Service
 After=network.target
 
 [Service]
-User=www-data
-Group=www-data
+User=carebear
+Group=carebear
 WorkingDirectory=$(pwd)
 Environment="PATH=$(pwd)/.venv/bin"
 ExecStartPre=/bin/bash -c "source $(pwd)/.env"
