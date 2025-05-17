@@ -50,15 +50,6 @@ mkdir -p data
 sudo chown -R $USER:$USER data
 chmod 755 data
 
-# Set up virtual environment
-echo "Setting up virtual environment..."
-python3.13 -m venv .venv
-source .venv/bin/activate
-
-# Install the package
-echo "Installing the app and its dependencies..."
-pip install -e .
-
 # Create systemd service file for the application
 echo "Creating systemd service file..."
 cat > carebears.service << EOF
