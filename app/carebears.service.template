@@ -1,0 +1,14 @@
+[Unit]
+Description=CareBears Uvicorn Service
+After=network.target
+
+[Service]
+User=carebear
+Group=carebear
+WorkingDirectory=WORKING_DIR
+Environment="PATH=WORKING_DIR/.venv/bin"
+EnvironmentFile=WORKING_DIR/.env
+ExecStart=WORKING_DIR/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
+
+[Install]
+WantedBy=multi-user.target

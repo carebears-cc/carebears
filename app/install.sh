@@ -50,9 +50,9 @@ mkdir -p data
 sudo chown -R carebear:carebear data
 chmod 755 data
 
-# Create systemd service file for the application
+# Create a separate systemd service file for the application
 echo "Creating systemd service file..."
-cat > carebears.service << EOF
+cat > carebears.service.template << 'EOF'
 [Unit]
 Description=CareBears Uvicorn Service
 After=network.target
@@ -60,19 +60,49 @@ After=network.target
 [Service]
 User=carebear
 Group=carebear
-WorkingDirectory=$(pwd)
-Environment="PATH=$(pwd)/.venv/bin"
-EnvironmentFile=$(pwd)/.env
-ExecStart=$(pwd)/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
+WorkingDirectory=WORKING_DIR
+Environment="PATH=WORKING_DIR/.venv/bin"
+EnvironmentFile=WORKING_DIR/.env
+ExecStart=WORKING_DIR/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
+# Verify .env file exists before proceeding
+if [ ! -f ".env" ]; then
+    echo "ERROR: .env file not found!"
+    echo "Please create .env file with required environment variables before proceeding."
+    echo "Required variables: GOOGLE_API_KEY, LOGFIRE_TOKEN"
+    exit 1
+fi
+
+# Set absolute paths to avoid systemd issues
+APP_DIR="$(pwd)"
+
+# Replace placeholders with actual paths
+sed "s|WORKING_DIR|${APP_DIR}|g" carebears.service.template > carebears.service
+
+# Validate the service file before installation
+echo "Validating service file..."
+cat carebears.service
+
+# Install the service
 sudo mv carebears.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable carebears.service
-sudo systemctl start carebears.service
+
+# Check if .env file is readable by the service user
+sudo -u carebear test -r "${APP_DIR}/.env" || {
+    echo "Warning: .env file is not readable by carebear user"
+    sudo chown carebear:carebear "${APP_DIR}/.env"
+    sudo chmod 600 "${APP_DIR}/.env"
+}
+
+# Start the service and check status
+sudo systemctl restart carebears.service
+sleep 2
+sudo systemctl status carebears.service
 
 echo "Installation complete! The application is now running at http://localhost"
 echo ""
