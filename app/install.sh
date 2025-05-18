@@ -62,7 +62,7 @@ User=carebear
 Group=carebear
 WorkingDirectory=$(pwd)
 Environment="PATH=$(pwd)/.venv/bin"
-ExecStartPre=/bin/bash -c "source $(pwd)/.env"
+EnvironmentFile=$(pwd)/.env
 ExecStart=$(pwd)/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
 
 [Install]
