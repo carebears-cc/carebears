@@ -12,16 +12,16 @@ from markupsafe import Markup
 from dotenv import load_dotenv
 
 # Import local modules
-from .models import (
+from models import (
     PatientCreate, PatientResponse, 
     InteractionCreate, InteractionResponse,
     PromptRequest, PromptResponse
 )
-from .database import (
+from database import (
     init_db, add_patient, get_patient, 
     get_patient_interactions, update_patient_context
 )
-from .services import process_prompt, initialize_gemini, extract_patient_info_from_text
+from services import process_prompt, initialize_gemini, extract_patient_info_from_text
 
 # Import Logfire for observability
 import logfire

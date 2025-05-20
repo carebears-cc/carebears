@@ -8,8 +8,8 @@ from typing import Dict, Tuple, Any, Optional
 from google import genai
 import logfire
 
-from .models import PROMPT_TEMPLATES
-from .database import get_patient, update_patient_context, add_interaction
+from models import PROMPT_TEMPLATES
+from database import get_patient, update_patient_context, add_interaction
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

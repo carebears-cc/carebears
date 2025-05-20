@@ -13,4 +13,4 @@ EXPOSE 8000
 
 # Command to run Uvicorn
 # Using gunicorn as a process manager for uvicorn workers is a common best practice
-CMD ["gunicorn", "app.main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
