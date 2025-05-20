@@ -8,7 +8,6 @@ services:
     depends_on:
       - app
     volumes:
-      - .docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - certbot_etc:/etc/letsencrypt
       - certbot_var:/var/www/certbot
     restart: always
