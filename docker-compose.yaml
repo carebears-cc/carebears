@@ -31,4 +31,4 @@ services:
       - ./data/certbot/www:/var/www/certbot # Used by Certbot for the webroot challenge
     # This command is just a placeholder to keep the container alive if you 'docker compose up' it.
     # Actual Certbot commands are run manually with 'docker compose run --rm certbot ...'
-    command: "tail -f /dev/null"
+    command: ""
