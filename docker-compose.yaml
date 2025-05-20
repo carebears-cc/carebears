@@ -7,6 +7,10 @@ services:
       - "80:80"
     depends_on:
       - app
+    volumes:
+      - .docker/nginx/nginx.conf: /etc/nginx/nginx.conf:ro
+      - certbot_etc:/etc/letsencrypt
+      - certbot_var:/var/www/certbot
     restart: always
 
   app:
@@ -18,5 +22,18 @@ services:
     expose:
       - "8000" # Expose to linked services, not directly to host
     volumes:
-      - ./app:/app/app # Mount local app code for development convenience (optional for production)
+      - ./app:/app # Mount local app code for development convenience (optional for production)
     restart: always
+
+  certbot:
+    image: certbot/certbot:latest # Use the official Certbot image
+    volumes:
+      - certbot_etc:/etc/letsencrypt # Persist certificates and Certbot config
+      - certbot_var:/var/www/certbot # Used by Certbot for the webroot challenge
+    # This command is just a placeholder to keep the container alive if you 'docker compose up' it.
+    # Actual Certbot commands are run manually with 'docker compose run --rm certbot ...'
+    command: "tail -f /dev/null"
+
+volumes:
+  certbot_etc: # Defined as a named volume for persistence
+  certbot_var: # Defined as a named volume for persistence
