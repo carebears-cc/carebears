@@ -12,16 +12,16 @@ from markupsafe import Markup
 from dotenv import load_dotenv
 
 # Import local modules
-from models import (
+from .models import (
     PatientCreate, PatientResponse, 
     InteractionCreate, InteractionResponse,
     PromptRequest, PromptResponse
 )
-from database import (
+from .database import (
     init_db, add_patient, get_patient, 
     get_patient_interactions, update_patient_context
 )
-from services import process_prompt, initialize_gemini, extract_patient_info_from_text
+from .services import process_prompt, initialize_gemini, extract_patient_info_from_text
 
 # Import Logfire for observability
 import logfire
@@ -40,6 +40,16 @@ logfire.configure(
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 logger.info("CareBears application starting up.")
+
+# Get the absolute path to the directory where this file (main.py) resides.
+# Inside the container, this will be /app/
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Construct the absolute path to the 'static' directory
+# This correctly points to /app/static
+STATIC_FILES_DIR = os.path.join(BASE_DIR, "static")
+# --- NEW: Construct the absolute path to the 'templates' directory ---
+TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 
 # --- FastAPI App Initialization ---
 app = FastAPI(
@@ -175,8 +185,8 @@ def format_llm_response(text):
     return Markup(text)
 
 # --- Templating and Static Files Setup ---
-templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory=TEMPLATES_DIR)
+app.mount("/static", StaticFiles(directory=STATIC_FILES_DIR), name="static")
 
 # Register custom filters
 templates.env.filters["format_llm_response"] = format_llm_response
