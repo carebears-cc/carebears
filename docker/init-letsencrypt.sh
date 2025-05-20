@@ -3,7 +3,7 @@
 # Define variables
 DOMAIN="app.carebears.cc" # Replace with your primary domain
 RSA_KEY_SIZE=2048
-DATA_PATH="/etc/letsencrypt" # Where Certbot will store its config and certs on the host
+DATA_PATH="./data/certbot/" # Where Certbot will store its config and certs on the host
 EMAIL="vaibhavb@gmail.com" # Replace with your email for urgent renewals
 
 # Ensure directories exist on the host for the named volumes

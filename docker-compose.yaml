@@ -8,8 +8,8 @@ services:
     depends_on:
       - app
     volumes:
-      - certbot_etc:/etc/letsencrypt
-      - certbot_var:/var/www/certbot
+      - ./data/certbot/etc:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
     restart: always
 
   app:
@@ -27,12 +27,8 @@ services:
   certbot:
     image: certbot/certbot:latest # Use the official Certbot image
     volumes:
-      - certbot_etc:/etc/letsencrypt # Persist certificates and Certbot config
-      - certbot_var:/var/www/certbot # Used by Certbot for the webroot challenge
+      - ./data/certbot/conf:/etc/letsencrypt # Persist certificates and Certbot config
+      - ./data/certbot/www:/var/www/certbot # Used by Certbot for the webroot challenge
     # This command is just a placeholder to keep the container alive if you 'docker compose up' it.
     # Actual Certbot commands are run manually with 'docker compose run --rm certbot ...'
     command: "tail -f /dev/null"
-
-volumes:
-  certbot_etc: # Defined as a named volume for persistence
-  certbot_var: # Defined as a named volume for persistence
