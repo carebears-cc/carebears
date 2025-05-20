@@ -11,7 +11,7 @@ CERTBOT_SERVICE="certbot"
 
 # Use --staging for testing to avoid hitting Let's Encrypt rate limits
 # Remove --staging for production
-STAGE_FLAG="--staging" # For production, change to empty string: STAGE_FLAG=""
+STAGE_FLAG="" # For production, change to empty string: STAGE_FLAG=""
 
 # --- Step 1: Check if certificates already exist in the Docker volume ---
 # We'll use a temporary certbot container to check the volume contents
