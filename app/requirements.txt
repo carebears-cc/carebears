@@ -1,0 +1,9 @@
+fastapi
+google-genai
+jinja2
+logfire
+pydantic
+python-dotenv
+python-multipart
+uvicorn[standard]
+gunicorn

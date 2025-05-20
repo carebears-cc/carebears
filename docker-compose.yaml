@@ -1,0 +1,25 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  nginx:
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    restart: always
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    env_file:
+      - ./app/.env
+    expose:
+      - "8000" # Expose to linked services, not directly to host
+    volumes:
+      - ./app:/app/app # Mount local app code for development convenience (optional for production)
+    restart: always

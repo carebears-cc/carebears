@@ -15,16 +15,17 @@ from database import get_patient, update_patient_context, add_interaction
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize the Gemini model
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
-GEMINI_MODEL_NAME = "gemini-2.0-flash"  # or any other appropriate model
-
 # Initialize the Gemini client
 gemini_client = None
 
 def initialize_gemini():
     """Initialize the Gemini client if API key is available"""
     global gemini_client
+
+    # Initialize the Gemini model
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    GEMINI_MODEL_NAME = "gemini-2.0-flash"  # or any other appropriate model
+
     if GOOGLE_API_KEY:
         try:
             gemini_client = genai.Client(api_key=GOOGLE_API_KEY)

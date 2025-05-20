@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from tempfile import NamedTemporaryFile
 from pathlib import Path
 from markupsafe import Markup
+from dotenv import load_dotenv
 
 # Import local modules
 from models import (
@@ -25,8 +26,11 @@ from services import process_prompt, initialize_gemini, extract_patient_info_fro
 # Import Logfire for observability
 import logfire
 
+# load_dotenv
+load_dotenv()
+
 # --- Logfire Configuration ---
-LOGFIRE_TOKEN = os.environ.get("LOGFIRE_TOKEN")
+LOGFIRE_TOKEN = os.getenv("LOGFIRE_TOKEN")
 logfire.configure(
     token=LOGFIRE_TOKEN,
     service_name="carebears-app"
