@@ -29,7 +29,7 @@ else
   docker compose run --rm certbot \
     certonly --webroot -w /var/www/certbot \
     --email "$EMAIL" \
-    -d "$DOMAIN" -d \
+    -d "$DOMAIN" \
     --rsa-key-size "$RSA_KEY_SIZE" \
     --agree-tos \
     --no-eff-email \
