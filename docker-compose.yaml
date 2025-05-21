@@ -5,11 +5,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "80:80"
+      - "443:443"
     depends_on:
       - app
-    volumes:
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
     restart: always
 
   app:
@@ -24,11 +22,3 @@ services:
       - ./app:/app # Mount local app code for development convenience (optional for production)
     restart: always
 
-  certbot:
-    image: certbot/certbot:latest # Use the official Certbot image
-    volumes:
-      - ./data/certbot/conf:/etc/letsencrypt # Persist certificates and Certbot config
-      - ./data/certbot/www:/var/www/certbot # Used by Certbot for the webroot challenge
-    # This command is just a placeholder to keep the container alive if you 'docker compose up' it.
-    # Actual Certbot commands are run manually with 'docker compose run --rm certbot ...'
-    command: ""
