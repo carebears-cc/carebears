@@ -1,0 +1,47 @@
+# docker/nginx/nginx.conf
+worker_processes 1;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+    sendfile        on;
+    keepalive_timeout  65;
+
+    # Redirect all HTTP traffic to HTTPS
+    server {
+        listen 80;
+        listen [::]:80; # Listen on IPv6 as well
+        #server_name app.carebears.cc;
+
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+
+        location /status {
+            proxy_pass http://beszel:8090/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme; # Important for apps checking HTTPS
+            client_max_body_size 10M;
+            # Remove /beszel from path before forwarding to Beszel
+            rewrite ^/status(/.*)$ $1 break;
+        }
+
+        # Proxy all other requests to the FastAPI application
+        location / {
+            proxy_pass http://app:8000; # 'app' is the service name in docker-compose
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme; # Important for apps checking HTTPS
+            client_max_body_size 10M;
+        }
+
+    }
+
+}
