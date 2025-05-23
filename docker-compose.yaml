@@ -1,8 +1,8 @@
 services:
   nginx:
-    build:
-      context: ./docker/nginx
-      dockerfile: Dockerfile
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
@@ -13,7 +13,6 @@ services:
     depends_on:
       - certbot
       - app
-    restart: unless-stopped
 
   certbot:
     image: certbot/certbot
